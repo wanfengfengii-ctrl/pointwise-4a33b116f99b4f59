@@ -1,0 +1,10 @@
+{
+  "configure": {"program": "rehearsal", "assignments": {"m2": "a"}},
+  "record_frames": [
+    {"program": "rehearsal", "source_frame": 101, "contributions": {"m1": 80, "m2": 10, "m3": 60}},
+    {"program": "rehearsal", "source_frame": 102, "contributions": {"m1": -80, "m2": -10, "m3": -60}},
+    {"program": "rehearsal", "source_frame": 103, "contributions": {}}
+  ],
+  "preview": {"program": "rehearsal", "revision": "evening", "source_frames": [101, 102, 103]},
+  "handover": {"seat": "booth", "operator": "a"}
+}
