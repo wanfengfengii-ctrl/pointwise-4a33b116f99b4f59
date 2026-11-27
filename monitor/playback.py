@@ -6,6 +6,22 @@ from monitor.seats import read_operator
 from rehearsal_contract import Problem, label, position
 
 
+def resolve_listen_target(db, seat, edition, frame_number):
+    """Validate the installed edition/frame and current operator for a listen."""
+    installed = read_installed_edition(db, seat, edition)
+    if installed is None:
+        raise Problem(404, "edition_unavailable", edition=edition)
+    frame = installed.snapshot.frame_at(frame_number)
+    if frame is None:
+        raise Problem(404, "frame_unavailable", edition=edition, frame=frame_number)
+    operator = read_operator(db, seat)
+    if operator is None:
+        raise Problem(409, "seat_unassigned", seat=seat)
+    if operator.operator not in installed.snapshot.roster:
+        raise Problem(409, "operator_not_in_roster", operator=operator.operator)
+    return frame, operator.operator
+
+
 def listen_frame(db, data):
     seat = label(data.get("seat"), "seat")
     request = label(data.get("request"), "request")
@@ -18,19 +34,8 @@ def listen_frame(db, data):
             raise Problem(409, "request_conflict", request=request)
         return asdict(prior)
 
-    installed = read_installed_edition(db, seat, edition)
-    if installed is None:
-        raise Problem(404, "edition_unavailable", edition=edition)
-    frame = installed.snapshot.frame_at(frame_number)
-    if frame is None:
-        raise Problem(404, "frame_unavailable", edition=edition, frame=frame_number)
-    operator = read_operator(db, seat)
-    if operator is None:
-        raise Problem(409, "seat_unassigned", seat=seat)
-    if operator.operator not in installed.snapshot.roster:
-        raise Problem(409, "operator_not_in_roster", operator=operator.operator)
-
-    sample = frame.monitor_samples[operator.operator]
-    played = append_listen(db, seat, request, edition, frame_number, operator.operator,
+    frame, operator = resolve_listen_target(db, seat, edition, frame_number)
+    sample = frame.monitor_samples[operator]
+    played = append_listen(db, seat, request, edition, frame_number, operator,
                            sample, asdict(frame.origin))
     return asdict(played)
